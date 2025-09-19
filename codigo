@@ -1,0 +1,127 @@
+# ===============================================
+# Atividade: Visualização de Dados em Python
+# Disciplina: Linguagem de Programação
+# Unidade 3 – Introdução à Análise de Dados
+# Autor: [Seu Nome]
+# ===============================================
+
+# Passo 1: Importar bibliotecas necessárias
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Configuração de estilo dos gráficos
+sns.set(style="whitegrid")
+plt.rcParams['figure.figsize'] = (10, 6)
+
+# ===============================================
+# Passo 1: Conectar ao banco de dados SQLite e criar a tabela
+# ===============================================
+# Criar/abrir conexão com o banco de dados SQLite
+conexao = sqlite3.connect('dados_vendas.db')
+
+# Criar cursor para executar comandos SQL
+cursor = conexao.cursor()
+
+# Criar tabela (caso ainda não exista)
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS vendas1 (
+    id_venda INTEGER PRIMARY KEY AUTOINCREMENT,
+    data_venda DATE,
+    produto TEXT,
+    categoria TEXT,
+    valor_venda REAL
+)
+''')
+
+# Inserir alguns dados de exemplo
+cursor.execute('''
+INSERT INTO vendas1 (data_venda, produto, categoria, valor_venda) VALUES
+('2023-01-01', 'Produto A', 'Eletrônicos', 1500.00),
+('2023-01-05', 'Produto B', 'Roupas', 350.00),
+('2023-02-10', 'Produto C', 'Eletrônicos', 1200.00),
+('2023-03-15', 'Produto D', 'Livros', 200.00),
+('2023-03-20', 'Produto E', 'Eletrônicos', 800.00),
+('2023-04-02', 'Produto F', 'Roupas', 400.00),
+('2023-05-05', 'Produto G', 'Livros', 150.00),
+('2023-06-10', 'Produto H', 'Eletrônicos', 1000.00),
+('2023-07-20', 'Produto I', 'Roupas', 600.00),
+('2023-08-25', 'Produto J', 'Eletrônicos', 700.00),
+('2023-09-30', 'Produto K', 'Livros', 300.00),
+('2023-10-05', 'Produto L', 'Roupas', 450.00),
+('2023-11-15', 'Produto M', 'Eletrônicos', 900.00),
+('2023-12-20', 'Produto N', 'Livros', 250.00);
+''')
+
+# Confirmar as alterações
+conexao.commit()
+
+# ===============================================
+# Passo 2: Explorar e preparar os dados
+# ===============================================
+# Ler os dados para um DataFrame Pandas
+df_vendas = pd.read_sql_query("SELECT * FROM vendas1", conexao)
+
+# Converter a coluna de datas para formato datetime
+df_vendas['data_venda'] = pd.to_datetime(df_vendas['data_venda'])
+
+# Exibir as primeiras linhas
+print("Prévia dos dados:\n", df_vendas.head())
+
+# Informações gerais sobre os dados
+print("\nInformações do DataFrame:\n")
+print(df_vendas.info())
+
+# ===============================================
+# Passo 3: Análise dos dados
+# ===============================================
+# Total de vendas por categoria
+vendas_categoria = df_vendas.groupby('categoria')['valor_venda'].sum().reset_index()
+print("\nTotal de vendas por categoria:\n", vendas_categoria)
+
+# Média de vendas por categoria
+media_categoria = df_vendas.groupby('categoria')['valor_venda'].mean().reset_index()
+print("\nMédia de vendas por categoria:\n", media_categoria)
+
+# Total de vendas por mês
+df_vendas['mes'] = df_vendas['data_venda'].dt.month
+vendas_mensais = df_vendas.groupby('mes')['valor_venda'].sum().reset_index()
+print("\nVendas mensais:\n", vendas_mensais)
+
+# ===============================================
+# Passo 4: Visualização dos dados
+# ===============================================
+
+# Gráfico 1: Vendas por categoria
+plt.figure()
+sns.barplot(x='categoria', y='valor_venda', data=vendas_categoria, palette="viridis")
+plt.title("Total de Vendas por Categoria")
+plt.xlabel("Categoria")
+plt.ylabel("Valor Total (R$)")
+plt.show()
+
+# Gráfico 2: Vendas mensais
+plt.figure()
+sns.lineplot(x='mes', y='valor_venda', data=vendas_mensais, marker="o", color="blue")
+plt.title("Total de Vendas por Mês (2023)")
+plt.xlabel("Mês")
+plt.ylabel("Valor Total (R$)")
+plt.xticks(range(1, 13))
+plt.show()
+
+# Gráfico 3: Distribuição dos valores de vendas
+plt.figure()
+sns.histplot(df_vendas['valor_venda'], bins=6, kde=True, color="green")
+plt.title("Distribuição dos Valores de Vendas")
+plt.xlabel("Valor da Venda (R$)")
+plt.ylabel("Frequência")
+plt.show()
+
+# ===============================================
+# Passo 5: Conclusão
+# ===============================================
+print("\nInsights Iniciais:")
+print("- Eletrônicos representaram a maior parte do faturamento ao longo do ano.")
+print("- As vendas apresentam picos em alguns meses, mostrando sazonalidade.")
+print("- A categoria de livros possui menor participação no faturamento.")
